@@ -20,6 +20,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!email || !password || !role) {
       toast({
         title: "Missing Information",
@@ -30,16 +31,38 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
 
     setIsLoading(true);
-    
-    // Simulate authentication
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Login Successful",
-        description: `Welcome back, ${role}!`,
+
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, role }),
       });
-      onLogin(role);
-    }, 1000);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          title: "Login Failed",
+          description: data.msg || "Invalid credentials",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login Successful",
+          description: `Welcome back, ${role}!`,
+        });
+        onLogin(role);
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getRoleIcon = (roleValue: string) => {
@@ -54,7 +77,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   return (
     <div className="min-h-screen bg-gradient-control flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-gradient-status opacity-30" />
-      
+
       <Card className="w-full max-w-md bg-card/95 backdrop-blur-sm border-border shadow-control">
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center shadow-glow">
@@ -69,7 +92,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             </CardDescription>
           </div>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
@@ -84,7 +107,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -97,7 +120,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
               <Select value={role} onValueChange={setRole} required>
@@ -106,27 +129,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="operator" className="flex items-center gap-2">
-                    <div className="flex items-center gap-2">
-                      <Train className="h-4 w-4" />
-                      Operator
-                    </div>
+                    <Train className="h-4 w-4" /> Operator
                   </SelectItem>
                   <SelectItem value="supervisor" className="flex items-center gap-2">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      Supervisor
-                    </div>
+                    <Users className="h-4 w-4" /> Supervisor
                   </SelectItem>
                   <SelectItem value="admin" className="flex items-center gap-2">
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      Administrator
-                    </div>
+                    <Shield className="h-4 w-4" /> Administrator
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
+
             <Button 
               type="submit" 
               className="w-full bg-gradient-primary hover:shadow-glow transition-all duration-300"
@@ -144,7 +158,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 </div>
               )}
             </Button>
-            
+
             <div className="text-center">
               <button 
                 type="button" 
