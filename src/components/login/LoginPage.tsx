@@ -16,6 +16,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +34,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const endpoint = mode === 'login'
+        ? "http://localhost:5000/api/auth/login"
+        : "http://localhost:5000/api/auth/register";
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, role }),
@@ -43,16 +48,22 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
       if (!response.ok) {
         toast({
-          title: "Login Failed",
-          description: data.msg || "Invalid credentials",
+          title: mode === 'login' ? "Login Failed" : "Registration Failed",
+          description: data.msg || data.error || "Something went wrong",
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Login Successful",
-          description: `Welcome back, ${role}!`,
+          title: mode === 'login' ? "Login Successful" : "Registration Successful",
+          description: mode === 'login'
+            ? `Welcome back, ${role}!`
+            : "User registered successfully. You can now log in.",
         });
-        onLogin(role);
+        if (mode === 'login') {
+          onLogin(role);
+        } else {
+          setMode('login');
+        }
       }
     } catch (err: any) {
       toast({
@@ -74,10 +85,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   };
 
+  const toggleMode = () => {
+    setMode(mode === 'login' ? 'register' : 'login');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-control flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-gradient-status opacity-30" />
-
       <Card className="w-full max-w-md bg-card/95 backdrop-blur-sm border-border shadow-control">
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center shadow-glow">
@@ -141,31 +155,42 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               </Select>
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full bg-gradient-primary hover:shadow-glow transition-all duration-300"
               disabled={isLoading}
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                  Authenticating...
+                  {mode === 'login' ? 'Authenticating...' : 'Registering...'}
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   {role && getRoleIcon(role)}
-                  Access Control System
+                  {mode === 'login' ? 'Access Control System' : 'Register Account'}
                 </div>
               )}
             </Button>
 
-            <div className="text-center">
-              <button 
-                type="button" 
+            <div className="flex justify-between items-center text-center">
+              <button
+                type="button"
                 className="text-sm text-accent hover:text-accent/80 transition-colors"
+                onClick={toggleMode}
               >
-                Forgot password?
+                {mode === 'login'
+                  ? "Don't have an account? Register"
+                  : "Already registered? Login"}
               </button>
+              {mode === 'login' && (
+                <button
+                  type="button"
+                  className="text-sm text-accent hover:text-accent/80 transition-colors"
+                >
+                  Forgot password?
+                </button>
+              )}
             </div>
           </form>
         </CardContent>
